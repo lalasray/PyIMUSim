@@ -108,6 +108,15 @@ Install the package from source:
 pip install -e .
 ```
 
+## Optional visualization example
+
+A lightweight 3D visualization example is available at `examples/visualize_imu.py`. It uses Plotly for an interactive view of IMU signals and is intentionally optional.
+
+```bash
+pip install plotly
+python examples/visualize_imu.py
+```
+
 ## GPU example
 
 See `examples/demo_torch_gpu.py` for a backend example using PyTorch (if installed).
