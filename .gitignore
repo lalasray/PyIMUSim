@@ -1,3 +1,5 @@
 /pyimusim/__pycache__
 /tests/__pycache__
 /dist
+/build
+/*.egg-info
