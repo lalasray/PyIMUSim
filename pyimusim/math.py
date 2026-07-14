@@ -48,9 +48,9 @@ def norm(vectors, axis=None, keepdims=False, backend=None):
 
 def euler_to_quaternion(roll, pitch, yaw, backend=None):
     backend = backend or get_backend('numpy')
-    half_roll = roll * 0.5
-    half_pitch = pitch * 0.5
-    half_yaw = yaw * 0.5
+    half_roll = backend.asarray(roll, dtype=float) * 0.5
+    half_pitch = backend.asarray(pitch, dtype=float) * 0.5
+    half_yaw = backend.asarray(yaw, dtype=float) * 0.5
     cr = backend.cos(half_roll)
     sr = backend.sin(half_roll)
     cp = backend.cos(half_pitch)
@@ -71,7 +71,7 @@ def quaternion_to_euler(q, backend=None):
         q = backend.reshape(q, (4, 1))
     w, x, y, z = q[0:1, :], q[1:2, :], q[2:3, :], q[3:4, :]
     roll = backend.arctan2(2 * (y * z + w * x), 2 * (w * w - 0.5 + z * z))
-    pitch = -backend.arcsin(backend.clip(2 * (x * z - w * y), -1.0, 1.0))
+    pitch = -backend.arcsin(backend.clip(2 * (x * z - w * y), backend.asarray(-1.0, dtype=float), backend.asarray(1.0, dtype=float)))
     yaw = backend.arctan2(2 * (x * y + w * z), 2 * (w * w - 0.5 + x * x))
     return backend.concatenate([roll, pitch, yaw], axis=0)
 
@@ -82,8 +82,8 @@ def quaternion_to_axis_angle(q, backend=None):
     if q.ndim == 1:
         q = backend.reshape(q, (4, 1))
     w = q[0:1, :]
-    angle = 2 * backend.arccos(backend.clip(w, -1.0, 1.0))
-    sin_half_angle = backend.sqrt(backend.clip(1.0 - w * w, 0.0, 1.0))
+    angle = 2 * backend.arccos(backend.clip(w, backend.asarray(-1.0, dtype=float), backend.asarray(1.0, dtype=float)))
+    sin_half_angle = backend.sqrt(backend.clip(1.0 - w * w, backend.asarray(0.0, dtype=float), backend.asarray(1.0, dtype=float)))
     default_axis = backend.reshape(backend.asarray([1.0, 0.0, 0.0], dtype=float), (3, 1))
     axis = backend.where(
         sin_half_angle == 0.0,

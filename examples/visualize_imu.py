@@ -7,11 +7,12 @@ It is intentionally optional and should be installed separately:
     pip install plotly
 """
 
+from pathlib import Path
+
 import numpy as np
 
 try:
     import plotly.graph_objects as go
-    import plotly.express as px
 except ImportError as exc:  # pragma: no cover - optional dependency
     raise SystemExit("Install plotly to run this example: pip install plotly") from exc
 
@@ -33,27 +34,74 @@ def _body_frame_axes(q, scale=1.0):
     return rotation @ axes
 
 
+class SineWaveTrajectory:
+    def __init__(self, amplitude=0.6, frequency=1.0, speed=0.3, yaw_rate=0.4, backend=None):
+        self.backend = backend or pyimusim.get_backend('numpy')
+        self.amplitude = amplitude
+        self.frequency = frequency
+        self.speed = speed
+        self.yaw_rate = yaw_rate
+
+    def to_backend(self, backend):
+        return SineWaveTrajectory(
+            amplitude=self.amplitude,
+            frequency=self.frequency,
+            speed=self.speed,
+            yaw_rate=self.yaw_rate,
+            backend=backend,
+        )
+
+    def position(self, t):
+        t = self.backend.asarray(t)
+        x = self.speed * t
+        y = self.amplitude * self.backend.sin(2.0 * np.pi * t)
+        z = self.amplitude * self.backend.cos(2.0 * np.pi * t)
+        return self.backend.stack([x, y, z], axis=0)
+
+    def velocity(self, t):
+        t = self.backend.asarray(t)
+        x = self.speed * self.backend.ones_like(t)
+        y = 2.0 * np.pi * self.frequency * self.amplitude * self.backend.cos(2.0 * np.pi * t)
+        z = -2.0 * np.pi * self.frequency * self.amplitude * self.backend.sin(2.0 * np.pi * t)
+        return self.backend.stack([x, y, z], axis=0)
+
+    def acceleration(self, t):
+        t = self.backend.asarray(t)
+        y = -(2.0 * np.pi * self.frequency) ** 2 * self.amplitude * self.backend.sin(2.0 * np.pi * t)
+        z = -(2.0 * np.pi * self.frequency) ** 2 * self.amplitude * self.backend.cos(2.0 * np.pi * t)
+        return self.backend.stack([self.backend.zeros_like(t), y, z], axis=0)
+
+    def rotation(self, t):
+        t = self.backend.asarray(t)
+        return pyimusim.Quaternion.from_euler(
+            0.0,
+            0.0,
+            self.yaw_rate * t,
+            backend=self.backend,
+        )
+
+    def rotational_velocity(self, t):
+        t = self.backend.asarray(t)
+        return self.backend.broadcast_to(
+            pyimusim.vector(0.0, 0.0, self.yaw_rate, backend=self.backend),
+            (3, t.shape[0]),
+        )
+
+    def rotational_acceleration(self, t):
+        return self.backend.zeros((3, t.shape[0]))
+
+
 def build_demo():
     sim = pyimusim.Simulation()
-    trajectory = pyimusim.ConstantVelocityTrajectory(
-        position=pyimusim.vector(0.0, 0.0, 0.0),
-        velocity=pyimusim.vector(0.3, 0.0, 0.0),
-        rotation=pyimusim.Quaternion.from_euler(0.0, 0.0, 0.0),
-        rotational_velocity=pyimusim.vector(0.0, 0.0, 0.4),
-    )
+    trajectory = SineWaveTrajectory(backend=sim.backend)
     imu = pyimusim.IdealIMU(simulation=sim, trajectory=trajectory)
     result = sim.run(imu, duration=2.0, dt=0.05)
 
     times = np.asarray(result['times']).reshape(-1)
     accel = np.asarray(result['measurements']['IdealAccelerometer'])
     gyro = np.asarray(result['measurements']['IdealGyroscope'])
-
-    # smooth sine-wave trajectory for the example
-    trajectory_points = np.stack([
-        np.linspace(0.0, 1.0, len(times)),
-        0.6 * np.sin(2.0 * np.pi * np.linspace(0.0, 1.0, len(times))),
-        0.6 * np.cos(2.0 * np.pi * np.linspace(0.0, 1.0, len(times))),
-    ], axis=1)
+    trajectory_points = np.asarray(trajectory.position(times)).T
+    rotations = trajectory.rotation(times)
 
     fig = go.Figure()
     fig.add_trace(go.Scatter3d(
@@ -88,11 +136,9 @@ def build_demo():
 
     # add a moving IMU frame and gravity arrows at a few sample points
     for idx in range(0, len(times), 10):
-        q = np.array([[1.0], [0.0], [0.0], [0.0]], dtype=float)
-        if idx < len(times):
-            q = np.array([[1.0], [0.0], [0.0], [0.0]], dtype=float)
+        q = np.asarray(rotations.values[:, idx]).reshape(4, 1)
         axes = _body_frame_axes(q, scale=0.2)
-        origin = np.array([trajectory_points[idx, 0], trajectory_points[idx, 1], trajectory_points[idx, 2]], dtype=float)
+        origin = trajectory_points[idx]
         x_axis = origin + axes[:, 0]
         y_axis = origin + axes[:, 1]
         z_axis = origin + axes[:, 2]
@@ -148,4 +194,6 @@ def build_demo():
 
 if __name__ == '__main__':
     fig = build_demo()
-    fig.show()
+    output_path = Path(__file__).with_suffix('.html')
+    fig.write_html(output_path, auto_open=False)
+    print(f'Saved interactive view to {output_path}')

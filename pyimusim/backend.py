@@ -109,6 +109,10 @@ class Backend(ABC):
         pass
 
     @abstractmethod
+    def zeros_like(self, value, dtype=None):
+        pass
+
+    @abstractmethod
     def normal(self, shape, mean=0.0, std=1.0):
         pass
 
@@ -193,6 +197,9 @@ class NumpyBackend(Backend):
 
     def repeat(self, array, repeats, axis=0):
         return np.repeat(array, repeats, axis=axis)
+
+    def zeros_like(self, value, dtype=None):
+        return np.zeros_like(value, dtype=dtype or np.float64)
 
     def normal(self, shape, mean=0.0, std=1.0):
         return np.random.normal(loc=mean, scale=std, size=shape)
@@ -292,6 +299,9 @@ class TorchBackend(Backend):
 
     def repeat(self, array, repeats, axis=0):
         return array.repeat_interleave(repeats, dim=axis)
+
+    def zeros_like(self, value, dtype=None):
+        return torch.zeros_like(value, dtype=self._dtype(dtype))
 
     def normal(self, shape, mean=0.0, std=1.0):
         return torch.normal(mean=mean, std=std, size=shape, device=self.device, dtype=self._dtype(None))
