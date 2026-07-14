@@ -1,3 +1,29 @@
+Metadata-Version: 2.4
+Name: pyimusim
+Version: 0.1.0
+Summary: A Python-only differentiable IMU simulator with CPU and optional GPU backends.
+Author: PyIMUSim
+License: Apache-2.0
+Project-URL: Homepage, https://github.com/pyimusim/pyimusim
+Project-URL: Source, https://github.com/pyimusim/pyimusim
+Keywords: imu,simulation,sensor,differentiable,torch,numpy
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy>=1.24
+Provides-Extra: torch
+Requires-Dist: torch; extra == "torch"
+Dynamic: license-file
+
 # PyIMUSim
 
 A Python-only differentiable IMU simulator with both CPU and optional GPU backends.

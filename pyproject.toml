@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=60.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyimusim"
+version = "0.1.0"
+description = "A Python-only differentiable IMU simulator with CPU and optional GPU backends."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{name = "PyIMUSim"}]
+requires-python = ">=3.9"
+keywords = ["imu", "simulation", "sensor", "differentiable", "torch", "numpy"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+torch = ["torch"]
+
+[project.urls]
+Homepage = "https://github.com/pyimusim/pyimusim"
+Source = "https://github.com/pyimusim/pyimusim"
+
+[tool.pytest.ini_options]
+addopts = "-q"
